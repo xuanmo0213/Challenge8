@@ -1,0 +1,1 @@
+./mjpg_streamer -i "./input_uvc.so -d /dev/video0 -y -n" -o "./output_http.so -w ./www"
