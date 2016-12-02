@@ -1,4 +1,6 @@
+#include<SoftwareSerial.h>
 /** -------------Init Values------------ **/
+SoftwareSerial mySerial(0,1);
 /* ----------------Servos---------------- */
 Servo wheels; 
 Servo esc; 
@@ -35,6 +37,8 @@ void setup(){
   wheels.write(90);
   pinMode(lidar_front, INPUT); // Set pin 3 as monitor pin
   pinMode(lidar_back, INPUT);
+  Serial.begin(9600);
+  mySerial.begin(9600);
   calibrateESC();
 }
 
@@ -97,8 +101,42 @@ void setup(){
   }                                                                                                                                                                                                              
 
 void loop(){
-    if (Serial.available()) {
-      printf(Serial.readString())；
+    if (mySerial.available()) {
+          char command;
+    if (mySerial.available()) {
+      command = mySerial.read();
+      switch(command){
+            case 'A':
+            auto_drive();
+            break;
+
+        case 'C':
+            control();
+            break;
+
+        case 'T':
+            turn();
+            break;
+
+        case 'K':
+            keep_straight();
+            break;
+
+        case 'S':
+            set_speed();
+            break;
+
+        case 'W':
+            adjust_wheel();
+            break;
+
+        case 'B':
+            go_backward();
+            break;
+
+        default:
+            print("Unknown Command");
+      }
     }
     delay(50);
     oscillate();
