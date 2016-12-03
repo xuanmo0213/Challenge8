@@ -26,6 +26,7 @@ double distance;
 
 /** -----------Setup Function----------- **/
 void setup(){
+  control = 1;
   pulse_width_left = pulseIn(3, HIGH);
   pulse_width_right = pulseIn(4, HIGH);
   delay(50);
@@ -123,21 +124,10 @@ void keep_straight() {
 
 }
 
-void set_speed() {
+void set_crawler() {
     control = 1;
 
 }
-
-void adjust_wheel() {
- 
-
-}
-
-void go_backward() {
- 
-
-}
-
 
 void loop(){
     if (mySerial.available()) {
@@ -162,15 +152,7 @@ void loop(){
             break;
 
         case 'S':
-            set_speed();
-            break;
-
-        case 'W':
-            adjust_wheel();
-            break;
-
-        case 'B':
-            go_backward();
+            set_crawler();
             break;
 
         default:
@@ -181,3 +163,4 @@ void loop(){
     oscillate();
 }
 }
+
