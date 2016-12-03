@@ -27,6 +27,7 @@ double distance;
 /** -----------Setup Function----------- **/
 void setup(){
   control = 1;
+  /*Serial.print(control);*/
   pulse_width_left = pulseIn(3, HIGH);
   pulse_width_right = pulseIn(4, HIGH);
   delay(50);
@@ -35,8 +36,8 @@ void setup(){
   Setpoint = 0;
   Gap = abs(Setpoint-Input);
   myPID.SetMode(AUTOMATIC);
-  wheels.attach(0);
-  esc.attach(1); // initialize ESC to Digital IO Pin #9
+  wheels.attach(6);
+  esc.attach(7); // initialize ESC to Digital IO Pin #9
   wheels.write(90);
   pinMode(lidar_left, INPUT); // Set pin 3 as monitor pin
   pinMode(lidar_right, INPUT);
@@ -57,14 +58,25 @@ void setup(){
  
   void oscillate(){
     distance = analogRead(A0);
-    if (distance >= 300 && control == 1){
+    /*Serial.print(distance);
+    Serial.print(control);*/
+    
+    if (distance >= 0 && control == 1){
         esc.write(75);
         pulse_width_left = pulseIn(lidar_left, HIGH);
         pulse_width_right = pulseIn(lidar_right, HIGH);
+            /*Serial.print(pulse_width_left);
+            Serial.print("\n");
+            Serial.print(pulse_width_right);
+            Serial.print("\n");*/
         if ( pulse_width_left !=0 && pulse_width_right != 0 && pulse_width_left <= 5000 && pulse_width_right <= 5000){
             pulse_width_left = pulse_width_left/10; /* 10usec = 1 cm of distance for LIDAR-Lit */
             pulse_width_right = pulse_width_right/10;
-            
+            Serial.print(pulse_width_left);
+            Serial.print("\n");
+            Serial.print(pulse_width_right);
+            Serial.print("\n");
+
             input_raw = pulse_width_left - pulse_width_right;
             Input =0 - abs(input_raw);
             Gap = abs( Input - Setpoint ); 
@@ -83,17 +95,20 @@ void setup(){
     
             myPID.Compute(); 
             if (input_raw >= 0){
-                if (pulse_width_left > Offset + 5)
-                flag = -1.5;
-                else flag = 0.25;
-            }
-            else if (pulse_width_left < Offset - 5){
+                if (pulse_width_right < Offset + 5)
                 flag = 2;
+                else flag = -0.25;
             }
-            else flag = -0.25;
-            angle = flag*Output/255*10 + 94;
+            else if (pulse_width_right > Offset - 5){
+                flag = -2;
+            }
+            else flag = 0.25;
+            angle = flag*Output/255*10 + 90;
             wheels.write(angle);
-
+            Serial.print(angle);
+            Serial.print("\n");
+            Serial.print(Output);
+            Serial.print("\n");
             }
         }
     
@@ -130,8 +145,7 @@ void set_crawler() {
 }
 
 void loop(){
-    if (mySerial.available()) {
-          char command;
+    char command;
     if (mySerial.available()) {
       command = mySerial.read();
       switch(command){
@@ -162,5 +176,5 @@ void loop(){
     delay(50);
     oscillate();
 }
-}
+
 
