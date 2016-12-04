@@ -1,4 +1,6 @@
 #include<SoftwareSerial.h>
+#include<Servo.h>
+#include <PID_v1.h>
 /** -------------Init Values------------ **/
 SoftwareSerial mySerial(0,1);
 /* ----------------Servos---------------- */
@@ -11,32 +13,34 @@ int lidar_left = 3;
 int lidar_right = 4;
 
 /* -----------------PIDs----------------- */
-int angle, c_angle;
+int angle, c_angle, control;
 double Setpoint, Input, Output, Gap, input_raw, Offset, c_output, d_diff;
 double aggKp=100, aggKi=0.0005, aggKd=0.15; 
 double consKp=8, consKi=0.00005, consKd=3;
 double flag = 1, c_flag = 1;
 
-PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, PID::DIRECT);
+PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
 /* ----------------Sonar----------------- */
 double distance;
 
 
 /** -----------Setup Function----------- **/
 void setup(){
-  pulse_width_left = pulseIn(D3, HIGH);
-  pulse_width_right = pulseIn(D4, HIGH);
+  control = 1;
+  /*Serial.print(control);*/
+  pulse_width_left = pulseIn(3, HIGH);
+  pulse_width_right = pulseIn(4, HIGH);
   delay(50);
   Input = abs(pulse_width_left-pulse_width_right)/10;
   Offset = (pulse_width_left + pulse_width_right)/20;
   Setpoint = 0;
   Gap = abs(Setpoint-Input);
-  myPID.SetMode(PID::AUTOMATIC);
-  wheels.attach(0);
-  esc.attach(1); // initialize ESC to Digital IO Pin #9
+  myPID.SetMode(AUTOMATIC);
+  wheels.attach(6);
+  esc.attach(7); // initialize ESC to Digital IO Pin #9
   wheels.write(90);
-  pinMode(lidar_front, INPUT); // Set pin 3 as monitor pin
-  pinMode(lidar_back, INPUT);
+  pinMode(lidar_left, INPUT); // Set pin 3 as monitor pin
+  pinMode(lidar_right, INPUT);
   Serial.begin(9600);
   mySerial.begin(9600);
   calibrateESC();
@@ -54,15 +58,26 @@ void setup(){
  
   void oscillate(){
     distance = analogRead(A0);
-    if (distance >= 300 && control == 1){
-        esc.write(60);
+    /*Serial.print(distance);
+    Serial.print(control);*/
+    
+    if (distance >= 0 && control == 1){
+        esc.write(75);
         pulse_width_left = pulseIn(lidar_left, HIGH);
         pulse_width_right = pulseIn(lidar_right, HIGH);
-        if ( pulse_width_left !=0 && pulse_width_right != 0 && pulse_width_front <= 5000 && pulse_width_front <= 5000){
-            pulse_width_front = pulse_width_front/10; /* 10usec = 1 cm of distance for LIDAR-Lit */
-            pulse_width_back = pulse_width_back/10;
-            
-            input_raw = pulse_width_front - pulse_width_back;
+            /*Serial.print(pulse_width_left);
+            Serial.print("\n");
+            Serial.print(pulse_width_right);
+            Serial.print("\n");*/
+        if ( pulse_width_left !=0 && pulse_width_right != 0 && pulse_width_left <= 5000 && pulse_width_right <= 5000){
+            pulse_width_left = pulse_width_left/10; /* 10usec = 1 cm of distance for LIDAR-Lit */
+            pulse_width_right = pulse_width_right/10;
+            Serial.print(pulse_width_left);
+            Serial.print("\n");
+            Serial.print(pulse_width_right);
+            Serial.print("\n");
+
+            input_raw = pulse_width_left - pulse_width_right;
             Input =0 - abs(input_raw);
             Gap = abs( Input - Setpoint ); 
             if (Gap > 60){
@@ -80,17 +95,20 @@ void setup(){
     
             myPID.Compute(); 
             if (input_raw >= 0){
-                if (pulse_width_front > Offset + 5)
-                flag = -1.5;
-                else flag = 0.25;
-            }
-            else if (pulse_width_front < Offset - 5){
+                if (pulse_width_right < Offset + 5)
                 flag = 2;
+                else flag = -0.25;
             }
-            else flag = -0.25;
-            angle = flag*Output/255*10 + 94;
+            else if (pulse_width_right > Offset - 5){
+                flag = -2;
+            }
+            else flag = 0.25;
+            angle = flag*Output/255*10 + 90;
             wheels.write(angle);
-
+            Serial.print(angle);
+            Serial.print("\n");
+            Serial.print(Output);
+            Serial.print("\n");
             }
         }
     
@@ -98,11 +116,36 @@ void setup(){
      esc.write(90);
     }
 
-  }                                                                                                                                                                                                              
+  }
+  
+void control_drive() {
+    control = 0;
+
+}
+
+  
+void auto_drive() {
+    control = 1;
+
+}
+
+void turn() {
+
+
+}
+
+void keep_straight() {
+    
+
+}
+
+void set_crawler() {
+    control = 1;
+
+}
 
 void loop(){
-    if (mySerial.available()) {
-          char command;
+    char command;
     if (mySerial.available()) {
       command = mySerial.read();
       switch(command){
@@ -111,7 +154,7 @@ void loop(){
             break;
 
         case 'C':
-            control();
+            control_drive();
             break;
 
         case 'T':
@@ -123,32 +166,15 @@ void loop(){
             break;
 
         case 'S':
-            set_speed();
-            break;
-
-        case 'W':
-            adjust_wheel();
-            break;
-
-        case 'B':
-            go_backward();
+            set_crawler();
             break;
 
         default:
-            print("Unknown Command");
+            Serial.print("Unknown Command");
       }
     }
     delay(50);
     oscillate();
 }
 
-int control(String str) {
-    control = 0;
-    return 1;
-}
-
-int auto(String str) {
-  control =1 ;
-  return 0;
-}
 
