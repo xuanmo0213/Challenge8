@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<!-- Template by quackit.com -->
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=0.5, maximum-scale=0.5">
+    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="https://raw.githubusercontent.com/yoannmoinet/nipplejs/master/dist/nipplejs.js"></script>
+
+
+    <style type="text/css">
+    /* Layout */
+        #main{
+            width: 110%; 
+            margin: 0 auto; 
+            text-align:left; 
+            margin-bottom: 10px;
+        }
+        #gap{
+            float:left; 
+            width: 5%;
+        }
+        #left{
+            float:left; 
+            width: 20%; 
+            background-color: whitesmoke;
+        }
+        #center{
+            float:left; 
+            width: 35%; 
+            background-color: whitesmoke;
+        }
+        #right{
+            float:left; 
+            width: 20%; 
+            background-color: whitesmoke;
+        }
+        h1{
+            text-align: center;
+            font-size: 20px;
+        }
+        header{
+            text-align: center;
+            font-size: 50px; 
+            background-color: burlywood;
+            color:darkslateblue;
+        }
+    </style>
+</head>
+
+<body>
+    <header id="header"><p><b>Group1</b></p></header>
+
+	<div id = "main">
+        <div id = "left">
+            <h1>Switch bar</h1>
+        </div>
+        
+        <div id = "gap">.</div>
+        
+        <div id = "center">
+            <h1>Real-time Status</h1>
+            <div>
+                <h2>video</h2> 
+                <img src = "/?action-stream"/>
+            </div>
+            <div> speed 
+                <label>1234</label>
+            </div>
+            <!--
+                jquery update the speed
+            -->
+        </div>
+        
+        <div id = "gap">.</div>
+        
+        <div id = "right" class = "joystick">
+            <h1 style = "text-align: center;">Control bar</h1>
+            <button>start</button>
+            <button>stop</button>
+            <div id = "joystick"></div>
+            
+        </div>
+        <script>
+            var manager = nipplejs.create({
+                    zone: document.getElementById('joystick'),
+                    mode: 'static',
+                    position: {left: '50%', top: '50%'},
+                    color: 'red'
+            });
+            var nipple = manager.get(0);
+            io.on('connection', function(socket){
+                nipple.on('start', function (type, data) {
+                    socket.emit('start', 'start');
+                });
+
+                nipple.on('end', function (type, data) {
+                    socket.emit('stop', 'stop');
+                });
+
+                nipple.on('move', function (type, data) {
+                    //alert(data.angle.radian);
+                    socket.emit('control', data.distance + "," + data.angle.degree);//speed + angle
+                });
+            });
+
+        </script>    
+    </div>
+
+</body>
+
+</html>
