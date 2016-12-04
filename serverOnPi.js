@@ -6,7 +6,9 @@ var SerialPort = require("serialport"),
     http = require('http').Server(app),
     io = require('socket.io')(http),
     fs = require('fs'),
-    kNN = require("k.n.n");
+    kNN = require("k.n.n"),
+    traindata = new Array(),
+    knn_cluster;
 var count = 0,
     C = xbee_api.constants,
     sampleDelay = 3000;
@@ -23,7 +25,7 @@ sp = new SerialPort.SerialPort(portName, portConfig);
 
 // KNN, training with the dataset in dataset_update.txt file
 var lineReader = require('readline').createInterface({
-  input: require('fs').createReadStream('data/dataset_update.txt')
+  input: require('fs').createReadStream('data/dataset.txt')
 });
 lineReader.on('line', function (line) {
     var lll = line.split("/")[0]+"";
@@ -34,7 +36,7 @@ lineReader.on('line', function (line) {
     //console.log(train_node);
     traindata.push(train_node);
 });
-var knn_cluster = new kNN(traindata);
+knn_cluster = new kNN(traindata);
 var rssi = [];
 
 var RSSIRequestPacket = {
@@ -81,16 +83,37 @@ io.on('connection', function(socket){
         }
         if(valid){
             var result = knn_cluster.launch(5, new kNN.Node({paramA: rssi[0], paramB: rssi[1], paramC: rssi[2], paramD: rssi[3], type: false}));
-            console.log(result);
+            console.log(result.type);
             socket.emit('knn_result',result.type+"");
+            if(result.type == 1 || result.type == 3 || result.type == 5 || reuslt.type == 7){
+                SerialPort.write('T');
+            }else{
+                SerialPort.write('K');
+            }
         }else{
             console.log("error");
             socket.emit('error',"error");
         }   
         count = 0; 
     }, 3000); 
-});   
+}); 
+io.on('control', function(socket){ 
+    //var data = socket.split(",");
+    //var speed = parseInt(data[0]);
+    //var angle = paresInt(data[1]);  
+    SerialPort.write('S' + socket);
+});
+io.on('auto_drive', function(socket){ 
+    SerialPort.write('A');
+});
+io.on('remote_control', function(socket){ 
+    SerialPort.write('C');
+});
 app.get('/', function(req, res){
   res.sendfile('page.html');
 });
+app.get('/joystick', function(req, res){
+  res.sendfile('try_joyStick.html');
+});
+app.use('/static',express.static(__dirname));
 app.listen(3000);
