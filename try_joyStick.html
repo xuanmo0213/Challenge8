@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8"> 
+    <!--<link href = "static/source.css" rel = "stylesheet">-->
+	<title>Group1 Challenge2 HOME</title>
+<style>        
+</style>
+<script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+<!--<script src="http://yoannmoinet.github.io/nipplejs/javascripts/nipplejs.js"></script>-->
+<script src="https://raw.githubusercontent.com/yoannmoinet/nipplejs/master/dist/nipplejs.js"></script>
+
+
+    
+</head>
+    
+<body>
+    <div id = "joystick" class = "joystick">   
+    </div>
+    <script>
+        /*
+        var s = function(sel) {
+          return document.querySelector(sel);
+        };
+        var sId = function(sel) {
+          return document.getElementById(sel);
+        };
+        var elDebug = sId('debug');
+        */
+        var manager = nipplejs.create({
+                zone: document.getElementById('joystick'),
+                mode: 'static',
+                position: {left: '50%', top: '50%'},
+                color: 'red'
+        });
+        var nipple = manager.get(0);
+        io.on('connection', function(socket){
+            nipple.on('start', function (type, data) {
+                socket.emit('start', 'start');
+            });
+
+            nipple.on('end', function (type, data) {
+                socket.emit('stop', 'stop');
+            });
+
+            nipple.on('move', function (type, data) {
+                //alert(data.angle.radian);
+                socket.emit('control', data.distance + "," + data.angle.degree);//speed + angle
+            });
+        });
+    
+    </script>    
+</body>
+
+
+    
+</html>
+<!--
+/*
+nipple.on("move", this.onNippleMove);
+private onNippleMove = (evt: EventData, data: NippleInteractiveData): void => {
+    console.log(data.angle.radians);
+ }
+*/
+/*
+var socket = io();
+    
+    manager.on('added', function (evt, nipple) {
+        io.on('connection', function(socket){
+            nipple.on('start', function (evt) {
+                socket.emit('start', 'start');
+            });
+            nipple.on('end', function (evt) {
+                socket.emit('stop', 'stop');
+            });
+            nipple.on('moved', function (type, data) {
+                
+                setInterval(function () {
+                    socket.emit('control', data.angle.radians + "," + data.angle.degree);
+                    console.log(data.angle.radians + "," + data.angle.degree);
+                     
+                    //var radian = elDebug.querySelector('.angle .radian .data'),
+                        degree = elDebug.querySelector('.angle .degree .data');
+                    
+                },1000);
+            });   
+        });
+    });
+    
+*/-->
