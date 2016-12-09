@@ -11,10 +11,11 @@
 <!--<script src="../dist/nipplejs.js"></script>-->
 
 <script>
-		var socket = io();
-		socket.on('send', function(msg){
-		$('#speed').text(msg);
-		});
+    var socket = io();
+    socket.on('send', function(msg){
+    $('#speed').text(msg);
+    });
+    
 </script>
 
 
@@ -518,7 +519,7 @@
 								<span class="switch">
 									<span class="switch-border1">
 										<span class="switch-border2">
-											<input id="switch1" type="checkbox" checked>
+											<input id="switch1" type="checkbox" >
 											<label for="switch1"></label>
 											<span class="switch-top"></span>
 											<span class="switch-shadow"></span>
@@ -567,8 +568,7 @@
 								</h1>-->
                                 <div id = "video">
                                     <h4>Video</h4>
-                                    <!--<img src = "/?action=stream"/></noscript>-->
-                                    <!--<source src="http://192.168.1.156:8080/?action=stream" type="video/webm" />-->
+
                                     <img style="-webkit-user-select: none; display: block; margin: auto; cursor: zoom-in;" src="http://192.168.1.156:8080/?action=stream">
                                 </div>
 								<div id="speed">
@@ -607,22 +607,34 @@
 
 	<script >
 	// This will run on page load
-		var socket = io();
-        //alert('auto!');
-			socket.emit('auto_drive',"auto_drive");
-		setInterval(function(){
-			var socket = io();
-			if(document.getElementById('switch1').checked ){
-					//alert("Auto")
-					socket.emit('auto_drive','auto_drive');
-					$("#right").hide(1000);
-				}else {
-					//alert("control")
-					socket.emit('remote_control','remote_control');
-                    //alert('remote_control!');
-					$("#right").show(1000);
-				}
-		}, 1000);
+    var socket = io();
+    var status = 1,
+        changed = true;
+    setInterval(function(){
+        if(document.getElementById('switch1').checked){
+            if(status != 1){
+                changed = true;
+            }
+            status = 1;
+            $("#right").hide(1000);
+        }else {
+            if(status != 2){
+                changed = true;
+            }
+            status = 2;
+            $("#right").show(1000);
+        }
+        if(changed){
+            if(status == 1){
+                socket.emit('auto_drive','auto_drive');
+            }else{
+                socket.emit('remote_control','remote_control');
+            }
+            changed = false;
+        }
+    },1000);
+        
+    
 	</script>
 
 	<script>
@@ -636,6 +648,7 @@
 			var nipple = manager.get(0);
 			 //socket.on('connection', function(socket){
             nipple.on('start', function (type, data) {
+                //alert('start');
                 var currTime = new Date();
                 if(currTime-lastTime > 3){
                     socket.emit('start', 'start');
@@ -645,6 +658,7 @@
             });
 
             nipple.on('end', function (type, data) {
+                //alert('end');
                 var currTime = new Date();
                 if(currTime-lastTime > 3){
                     socket.emit('stop', 'stop');
@@ -655,10 +669,10 @@
 
             nipple.on('move', function (type, data) {
                 var currTime = new Date();
-                if(currTime-lastTime > 3){
+                if(currTime-lastTime > 1000){
                     var dis = parseInt(data.distance);
                     var angle = parseInt(data.angle.degree);
-                    socket.emit('control', dis + "," + angle);//speed + angle
+                    socket.emit('control', dis + " , " + angle);//speed + angle
                     lastTime = currTime;
                 }
                     
