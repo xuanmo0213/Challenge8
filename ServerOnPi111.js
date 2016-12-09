@@ -8,7 +8,6 @@ var SerialPort = require("serialport"),
     kNN = require("k.n.n"),
     traindata = new Array(),
     knn_cluster;
-//var socket = io();
 var count = 0,
     C = xbee_api.constants,
     sampleDelay = 3000;
@@ -21,8 +20,8 @@ portConfig = {
       baudRate: 9600,
       parser: XBeeAPI.rawParser()
     };
-sp = new SerialPort.SerialPort("/dev/ttyUSB1", portConfig);
-var sp_arduino = new SerialPort.SerialPort("/dev/ttyUSB0");
+sp = new SerialPort.SerialPort("/dev/ttyUSB0", portConfig);
+var sp_arduino = new SerialPort.SerialPort("/dev/ttyUSB1");
 
 
 // KNN, training with the dataset in dataset_update.txt file
@@ -55,7 +54,6 @@ sp.on("open", function () {
   setInterval(requestRSSI, sampleDelay);
 });
 // Recieve RSSI 
-var lastType = 0;
 XBeeAPI.on("frame_object", function(frame) {
     if (frame.type == 144){
     console.log("Beacon ID: " + frame.data[1] + ", RSSI: " + (frame.data[0]) + "  count : " + count);
@@ -76,28 +74,29 @@ XBeeAPI.on("frame_object", function(frame) {
           }
     }
     if(count == 4){ 
-        var valid = true; 
-            //lastType = 0;
+        var valid = true, 
+            lastType = 0;
         for(var i = 0; i < 4; i ++){ 
           if(rssi[i] == 0||rssi[i] == undefined||rssi[i] == 255) valid = false; 
         }
         if(valid){            
-            var result = knn_cluster.launch(3, new kNN.Node({paramA: rssi[0], paramB: rssi[1], paramC: rssi[2], paramD: rssi[3], type: false}));
+            var result = knn_cluster.launch(5, new kNN.Node({paramA: rssi[0], paramB: rssi[1], paramC: rssi[2], paramD: rssi[3], type: false}));
             console.log("current location is : " + result.type);
+            //socket.emit('knn_result',result.type+"");
             if(lastType != result.type){
-                io.emit('knn_result',result.type);
-                /*try{
-                    if(result.type != 6){
+                try{
+                    if(result.type == 1 || result.type == 3 || result.type == 5 || result.type == 7){
                         sp_arduino.write('T');
                     }else{
                         sp_arduino.write('K');
                     }
-                    
-                }catch(error){ console.log("error : " + error);}    
-                */
-                lastType = result.type;          
+                }catch(error){ console.log("error : " + error);}               
+                lastType = result.type;
             }
-        }  
+        }else{
+            console.log("current location is : " + lastType);
+            //socket.emit('error',"error");
+        }   
         count = 0; 
     }        
 });
@@ -142,7 +141,7 @@ io.on('connection', function(socket){
 //});
 
 app.get('/', function(req, res){
-  res.sendfile('page_knn.html');
+  res.sendfile('page.html');
 });
 app.get('/joystick', function(req, res){
   res.sendfile('try_joyStick.html');
